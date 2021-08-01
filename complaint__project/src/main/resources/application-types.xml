@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="arr" format="json">
+      <types:shape format="weave" example="examples/Complaints.json"><![CDATA[%dw 2.0
+
+type arr = Array<{|  compliantID: String,   customerNumber: String,   orderNumber: String,   complaintDesc: String,   complaintStatus: String|}> {"example": "[{\\\"compliantID\\\":\\\"CM11\\\",\\\"customerNumber\\\":\\\"C101\\\",\\\"orderNumber\\\":\\\"OD101\\\",\\\"complaintDesc\\\":\\\"Getting Wrong output while checking all Apps\\\",\\\"complaintStatus\\\":\\\"Pending\\\"},{\\\"compliantID\\\":\\\"CM12\\\",\\\"customerNumber\\\":\\\"C103\\\",\\\"orderNumber\\\":\\\"OD103\\\",\\\"complaintDesc\\\":\\\"Battery is not charging\\\",\\\"complaintStatus\\\":\\\"Pending\\\"}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="obj" format="json">
+      <types:shape format="weave" example="examples/complaintsobj.json"><![CDATA[%dw 2.0
+
+type obj = {|
+  compliantID: String, 
+  customerNumber: String, 
+  orderNumber: String, 
+  complaintDesc: String, 
+  complaintStatus: String
+|} {"example": "{\\\"compliantID\\\":\\\"CM11\\\",\\\"customerNumber\\\":\\\"C101\\\",\\\"orderNumber\\\":\\\"OD101\\\",\\\"complaintDesc\\\":\\\"Getting Wrong output while checking all Apps\\\",\\\"complaintStatus\\\":\\\"Pending\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#5c66520c-f789-4c65-90fa-fa1fcf068f92">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="arr"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#248c44b2-7ed9-46da-9afd-3ed11603f960">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="obj"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

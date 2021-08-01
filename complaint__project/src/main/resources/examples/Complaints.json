@@ -1,0 +1,16 @@
+[
+  {
+    "compliantID": "CM11",
+    "customerNumber": "C101",
+    "orderNumber": "OD101",
+    "complaintDesc": "Getting Wrong output while checking all Apps",
+    "complaintStatus": "Pending"
+  },
+  {
+    "compliantID": "CM12",
+    "customerNumber": "C103",
+    "orderNumber": "OD103",
+    "complaintDesc": "Battery is not charging",
+    "complaintStatus": "Pending"
+  }
+]

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	
+	<flow name="GetAllComplaintsFlow" doc:id="49041ee3-c570-4ed3-b203-801434eaf1db" >
+		<db:select doc:name="Select" doc:id="1db8880e-b2c4-454a-9679-d7d50c803103" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from complaints]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="5c66520c-f789-4c65-90fa-fa1fcf068f92">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	compliantID: payload01.CID,
+	customerNumber: payload01.customerNumber default "",
+	orderNumber: payload01.orderNumber,
+	complaintDesc: payload01.complaintDesc default "",
+	complaintStatus: payload01.complaintStatus default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	
+
+</flow>
+	<flow name="GetByIDFlow" doc:id="b5d29849-ab27-4df7-831e-dc3095bc6ebf" >
+		<db:query-single doc:name="Query single" doc:id="9e4ebbb4-4af8-4a84-bf46-9d73eba2387e" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from complaints where CID = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[id : vars.CID]]]></db:input-parameters>
+		</db:query-single>
+		<choice doc:name="Choice" doc:id="ee330455-01d9-4662-afa4-fe30916cd1e9" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="Transform Message" doc:id="248c44b2-7ed9-46da-9afd-3ed11603f960" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	compliantID: payload.CID,
+	customerNumber: payload.customerNumber default "",
+	orderNumber: payload.orderNumber,
+	complaintDesc: payload.complaintDesc default "",
+	complaintStatus: payload.complaintStatus default ""
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="24e0d8dc-89cc-4bfe-945b-d1284630e1bc" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="DeletebyId" doc:id="53a1a9ab-ac71-4755-9205-cc45f112f799" >
+		<db:query-single doc:name="Query single" doc:id="88c195ea-7c08-4602-813a-94b828d047d4" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from complaints where CID = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[id : vars.CID]]]></db:input-parameters>
+		</db:query-single>
+		<choice doc:name="Choice" doc:id="1c6cf514-a628-4d56-8a6e-fc2433a4c8c3" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<db:delete doc:name="Delete" doc:id="2230d0d5-7648-4909-94d9-4db7d5ae6d44" config-ref="Database_Config">
+					<db:sql ><![CDATA[delete from complaints where CID = :id]]></db:sql>
+					<db:input-parameters ><![CDATA[#[id : vars.CID]]]></db:input-parameters>
+				</db:delete>
+				<ee:transform doc:name="Transform Message" doc:id="76d591eb-e3c7-4857-ac89-e940465b9e4e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "Complaint Cancelled successfully"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="5c13c08b-24e5-4537-9b52-a03ad66a3de2" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: " Provide the correct Id to cancel"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[500]" doc:name="Set Variable" doc:id="7a2406da-7705-4323-a252-0daef10689df" variableName="httpStatus"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<sub-flow name="VarSub_Flow" doc:id="ceb439bf-7ff3-4c7f-87b0-daed433f9161" >
+		<set-variable value="#[message.payload.customerNumber]" doc:name="CustomerNumber" doc:id="f41bc1a4-d658-4a1f-b435-1ab98a28abd8" variableName="custNumber"/>
+		<set-variable value="#[message.payload.orderNumber]" doc:name="orderNumber" doc:id="da99ae7e-7344-4817-beec-82b688c64a57" variableName="ON"/>
+		<set-variable value="#[message.payload.complaintDesc]" doc:name="Desc" doc:id="cb605f52-24fc-49d1-912d-7cb191862ad7" variableName="Desc"/>
+		<set-variable value="#[message.payload.complaintStatus]" doc:name="Status" doc:id="d04f53ea-abf3-4266-a32c-411945b5527a" variableName="CS"/>
+	</sub-flow>
+	<flow name="PatchFlow" doc:id="edc34eed-2748-4f65-bcd9-ae8fe26d072e" >
+		<flow-ref doc:name="Flow Reference" doc:id="06e443cd-a97c-45eb-84de-a4831455b229" name="VarSub_Flow"/>
+		<db:query-single doc:name="Query single" doc:id="1a010869-0689-4e73-a7df-3a8e591ea430" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from complaints where CID = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[id : vars.CID]]]></db:input-parameters>
+		</db:query-single>
+		<ee:transform doc:name="Transform Message" doc:id="a4f61cab-a984-491c-9904-47c3b8a36c18" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Desc : vars.Desc default payload.complaintDesc,
+	Status : vars.CS default payload.complaintStatus,
+	Ordernum : vars.ON default payload.orderNumber,
+	custnumber : vars.custNumber default payload.customerNumber,
+	
+	}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:update doc:name="Update" doc:id="69d27d59-12a6-441f-a832-2f938609d990" config-ref="Database_Config">
+			<db:sql ><![CDATA[update complaints set orderNumber = :on, complaintDesc = :cd, complaintStatus = :cs,customerNumber= :cn where CID =:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id : vars.CID,
+	on : payload.Ordernum,
+	cd : payload.Desc,
+	cs : payload.Status,
+	cn : payload.custnumber
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="cdd90b57-4bb9-4e0e-8acc-ee7db26a8b7f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "Details of Id with " ++ vars.CID as String ++ " has been updated"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="PostFlow" doc:id="d11d5f88-fe32-4f07-982f-68eb934ace45" >
+		<flow-ref doc:name="Flow Reference" doc:id="c7c8cd64-9050-4408-891f-3ba10cd5d0bc" name="VarSub_Flow"/>
+		<db:query-single doc:name="Query single" doc:id="56df4068-c919-4c4e-9f29-e2927b7ef19a" config-ref="Database_Config">
+			<db:sql ><![CDATA[select max(CID) from complaints]]></db:sql>
+		</db:query-single>
+		<set-variable value='#["CM" ++ ((payload."max(CID)"[2 to 3]as Number)+1)]' doc:name="CID" doc:id="67bfa8be-12a7-4f39-809d-44d8ddac9d3b" variableName="cid"/>
+		<db:insert doc:name="Insert" doc:id="75e6cb65-aa7c-473b-932b-9d9641be0c2f" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO complaints (CID,customerNumber,orderNumber,complaintDesc) values(:id,:cn,:on,:cd)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id : vars.cid,
+	cn : vars.custNumber,
+	on : vars.ON,
+	cd : vars.Desc
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="03055e4d-7482-4071-b256-1b8d28093326" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message : "Complaint registered with complaint ID : " ++ vars.cid as String
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	
+	</mule>
